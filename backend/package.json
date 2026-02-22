@@ -1,0 +1,29 @@
+{
+  "name": "legal-scraper-backend",
+  "version": "1.0.0",
+  "description": "Legal case management backend with court hearing scraper",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "worker": "node src/workers/scrape-worker.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "bullmq": "^5.70.0",
+    "cheerio": "^1.2.0",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "ioredis": "^5.9.3",
+    "playwright": "^1.58.2"
+  },
+  "devDependencies": {
+    "prisma": "^5.22.0"
+  }
+}
