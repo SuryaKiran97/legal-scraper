@@ -6,6 +6,11 @@ import { scrapeAdvocateCauseList } from "../scrapers/tshcAdvocateWise.js";
 import { SCRAPE_QUEUE_NAME, JOB_TYPES } from "../queues/scrapeQueue.js";
 
 const prisma = new PrismaClient();
+// Support both client shapes: causeListStatus (preferred, table CauseListStatus) or liveStatus (if client was generated with LiveStatus model)
+const causeListStatusModel = prisma.causeListStatus ?? prisma.liveStatus;
+if (!causeListStatusModel) {
+  throw new Error("Prisma client missing cause list model. Stop worker, run: npx prisma generate");
+}
 
 const REDIS_URL = process.env.REDIS_URL ?? "redis://localhost:6379";
 const connection = {
@@ -42,7 +47,7 @@ async function runTshcLiveStatus(courtId) {
     let recordsScraped = 0;
 
     for (const r of rows) {
-      await prisma.causeListStatus.upsert({
+      await causeListStatusModel.upsert({
         where: {
           courtHallNo_statusDate: {
             courtHallNo: r.courtHallNo,

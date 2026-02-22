@@ -24,14 +24,16 @@ router.get("/", async (req, res) => {
       }
     }
 
-    const causeListStatuses = await prisma.causeListStatus.findMany({
+    const model = prisma.causeListStatus ?? prisma.liveStatus;
+    if (!model) return res.status(500).json({ error: "Prisma client missing cause list status model. Run: npx prisma generate (stop worker first)." });
+    const rows = await model.findMany({
       where,
       orderBy: [{ statusDate: "desc" }, { slNo: "asc" }],
       take: limit,
       include: { court: { select: { id: true, name: true, code: true } } },
     });
 
-    res.json({ liveStatuses, count: liveStatuses.length });
+    res.json({ liveStatuses: rows, count: rows.length });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
