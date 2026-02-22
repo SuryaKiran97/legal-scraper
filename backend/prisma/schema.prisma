@@ -11,48 +11,91 @@ datasource db {
 }
 
 model Court {
-  id          String     @id @default(cuid())
-  name        String
-  code        String     @unique
-  url         String?
+  id           String      @id @default(cuid())
+  name         String
+  code         String      @unique
+  url          String?
   jurisdiction String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  hearings    Hearing[]
-  scrapeLogs  ScrapeLog[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  hearings     Hearing[]
+  scrapeLogs   ScrapeLog[]
 }
 
 model Hearing {
-  id          String     @id @default(cuid())
-  courtId     String
-  court       Court      @relation(fields: [courtId], references: [id], onDelete: Cascade)
-  caseNumber  String
-  caseTitle   String?
-  hearingDate DateTime
-  hearingType String?
-  room        String?
-  judge       String?
-  status      String?    // e.g. scheduled, completed, continued
-  rawData     Json?      // original scraped payload for debugging/reprocessing
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id                   String              @id @default(cuid())
+  courtId              String
+  court                Court               @relation(fields: [courtId], references: [id], onDelete: Cascade)
+
+  // Case identification
+  slNo                 Int?                // SI.No column
+  caseNumber           String              // e.g. WP/10397/2025
+  caseTitle            String?             // full case title if available
+
+  // Hearing schedule
+  hearingDate          DateTime
+  hearingTime          String?             // e.g. "10:30 AM"
+  hearingMode          String?             // e.g. "HYBRID MODE", "PHYSICAL"
+
+  // Court details
+  courtNumber          String?             // e.g. "Court No. 14"
+  judge                String?             // e.g. "THE HONOURABLE SRI JUSTICE NAGESH BHEEMAPAKA"
+  room                 String?             // court room if different from courtNumber
+
+  // List classification
+  listType             String?             // DAILY LIST | MOTION LIST | AFTER MOTION LIST | AFTER ADJOURNED MOTION LIST
+  hearingCategory      String?             // ADMISSION (CENTRAL GOVT.) | FINAL HEARING | ADMISSION (MUNICIPAL ADMN.) etc.
+
+  // Party details
+  petitionerName       String?             // e.g. "Japa Ravinder Reddy"
+  respondentName       String?             // e.g. "The Union Of India"
+  petitionerAdvocate   String?             // e.g. "P RAMA SHARANA SHARMA"
+  respondentAdvocate   String?             // e.g. "D NARENDAR NAIK (R3)"
+
+  // Additional info
+  district             String?             // District/Remarks column e.g. "KARIMNAGAR"
+  status               String?             // scheduled | completed | adjourned
+
+  // Interim Applications - stored as relation (one case can have multiple IAs)
+  interimApplications  InterimApplication[]
+
+  // Raw scraped data - always keep for debugging
+  rawData              Json?
+
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
 
   @@unique([courtId, caseNumber, hearingDate])
   @@index([courtId])
   @@index([hearingDate])
   @@index([caseNumber])
+  @@index([judge])
+  @@index([listType])
+}
+
+// Separate table for Interim Applications
+// One hearing can have multiple IAs like IA 1/2025, IA 2/2025 etc.
+model InterimApplication {
+  id          String   @id @default(cuid())
+  hearingId   String
+  hearing     Hearing  @relation(fields: [hearingId], references: [id], onDelete: Cascade)
+  iaNumber    String   // e.g. "IA 1/2025"
+  iaType      String?  // e.g. "Direction Petition", "Injunction Petition", "Vacate Stay Petition"
+  createdAt   DateTime @default(now())
+
+  @@index([hearingId])
 }
 
 model ScrapeLog {
-  id            String   @id @default(cuid())
-  courtId       String
-  court         Court    @relation(fields: [courtId], references: [id], onDelete: Cascade)
-  startedAt     DateTime @default(now())
-  completedAt   DateTime?
-  status        String   // running | completed | failed
-  recordsScraped Int     @default(0)
-  errorMessage  String?
-  createdAt     DateTime @default(now())
+  id             String    @id @default(cuid())
+  courtId        String
+  court          Court     @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  startedAt      DateTime  @default(now())
+  completedAt    DateTime?
+  status         String    // running | completed | failed
+  recordsScraped Int       @default(0)
+  errorMessage   String?
+  createdAt      DateTime  @default(now())
 
   @@index([courtId])
   @@index([startedAt])
