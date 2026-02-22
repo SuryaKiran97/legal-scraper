@@ -20,6 +20,7 @@ model Court {
   updatedAt    DateTime    @updatedAt
   hearings     Hearing[]
   scrapeLogs   ScrapeLog[]
+  causeListStatuses CauseListStatus[]
 }
 
 model Hearing {
@@ -84,6 +85,31 @@ model InterimApplication {
   createdAt   DateTime @default(now())
 
   @@index([hearingId])
+}
+
+// Cause list upload status page - scraped first before getting actual hearings
+// URL: causelist.tshc.gov.in/live-status
+model CauseListStatus {
+  id              String    @id @default(cuid())
+  courtId         String
+  court           Court     @relation(fields: [courtId], references: [id], onDelete: Cascade)
+
+  slNo            Int?              // SNo column
+  courtHallNo     String            // Court Hall No e.g. "1", "2", "5"
+  benchName       String?           // Hon'ble Bench e.g. "DB-I", "BVRJ", "NVSKJ"
+  listType        String?           // D = Daily, could be others
+  status          String            // UPLOADED | ON LEAVE | NOT UPLOADED
+  uploadedAt      DateTime?         // Uploaded Date column e.g. "20-02-2026 17:30"
+  pdfUrl          String?           // href of the View link — use this to scrape actual hearings
+  statusDate      DateTime          // the date this status page is for (from page heading)
+
+  scrapedAt       DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+
+  @@unique([courtHallNo, statusDate])   // one status per hall per day
+  @@index([courtId])
+  @@index([statusDate])
+  @@index([status])
 }
 
 model ScrapeLog {
