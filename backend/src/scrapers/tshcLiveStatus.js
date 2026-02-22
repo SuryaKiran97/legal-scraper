@@ -59,9 +59,6 @@ export async function scrapeLiveStatus() {
     const table = page.locator("table").first();
     await table.waitFor({ state: "visible", timeout: 15000 });
 
-    // Optional: wait a bit for any JS-rendered content
-    await page.waitForTimeout(1000);
-
     // Extract status date from page — "CAUSE LIST UPLOADING STATUS DATED: 23-02-2026"
     // Search body text so we don't depend on a specific heading tag or class
     const bodyText = await page.locator("body").textContent();
@@ -72,13 +69,9 @@ export async function scrapeLiveStatus() {
       );
     }
 
-    // Get data rows (prefer tbody to skip thead)
-    let rowLocator = table.locator("tbody tr");
-    let rowElements = await rowLocator.all();
-    if (rowElements.length === 0) {
-      rowLocator = table.locator("tr");
-      rowElements = await rowLocator.all();
-    }
+    // Data rows: tbody tr (skips thead), or all tr if no tbody
+    const tbodyRows = await table.locator("tbody tr").all();
+    const rowElements = tbodyRows.length > 0 ? tbodyRows : await table.locator("tr").all();
     if (rowElements.length === 0) throw new Error("No table rows found on the page.");
 
     const results = [];
@@ -104,32 +97,17 @@ export async function scrapeLiveStatus() {
 
       if (!courtHallNo && !benchName && !status) continue;
 
-      const slNo = slNoRaw != null && slNoRaw !== "" ? parseInt(slNoRaw, 10) : null;
+      const parsed = parseInt(slNoRaw, 10);
+      const slNo = slNoRaw != null && slNoRaw !== "" && !isNaN(parsed) ? parsed : null;
       const uploadedAt = parseStatusDateTime(uploadedDateStr || "");
 
-      let pdfUrl = null;
-      if (cells.length > 6) {
-        const linkCell = cells[6];
-        const link = linkCell.locator('a[href*=".pdf"], a[href*="view"], a[href*="pdf"]').first();
-        const href = await link.getAttribute("href").catch(() => null);
-        if (href) {
-          pdfUrl = href.startsWith("http") ? href : new URL(href, LIVE_STATUS_URL).href;
-        }
-      }
-      // If no link in last column, try any link in the row
-      if (!pdfUrl) {
-        const anyLink = row.locator("a[href]").first();
-        pdfUrl = await anyLink.getAttribute("href").catch(() => null);
-        if (pdfUrl && !pdfUrl.startsWith("http")) pdfUrl = new URL(pdfUrl, LIVE_STATUS_URL).href;
-      }
-
-      // ON LEAVE rows: store but set pdfUrl to null
-      if (status.toUpperCase().includes("ON LEAVE")) {
-        pdfUrl = null;
-      }
+      const linkEl = cells.length > 6 ? cells[6].locator("a[href]").first() : row.locator("a[href]").first();
+      let pdfUrl = await linkEl.getAttribute("href").catch(() => null);
+      if (pdfUrl && !pdfUrl.startsWith("http")) pdfUrl = new URL(pdfUrl, LIVE_STATUS_URL).href;
+      if (status.toUpperCase().includes("ON LEAVE")) pdfUrl = null;
 
       results.push({
-        slNo: isNaN(slNo) ? null : slNo,
+        slNo,
         courtHallNo,
         benchName: benchName || null,
         listType: listType || null,
