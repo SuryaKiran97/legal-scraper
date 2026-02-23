@@ -4,6 +4,7 @@ import cors from "cors";
 import scrapeRoutes from "./routes/scrapeRoutes.js";
 import scrapeLogRoutes from "./routes/scrapeLogRoutes.js";
 import hearingRoutes from "./routes/hearingRoutes.js";
+import liveStatusRoutes from "./routes/liveStatusRoutes.js";
 import { startTshcLiveStatusSchedule } from "./queues/scrapeQueue.js";
 
 const app = express();
@@ -19,6 +20,7 @@ app.get("/health", (_req, res) => {
 app.use("/api/scrape", scrapeRoutes);
 app.use("/api/scrape-logs", scrapeLogRoutes);
 app.use("/api/hearings", hearingRoutes);
+app.use("/api/cause-list-status", liveStatusRoutes);
 
 app.listen(PORT, async () => {
   console.log(`Server running at http://localhost:${PORT}`);

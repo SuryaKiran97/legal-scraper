@@ -1,15 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 * {
   box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, sans-serif;
-  line-height: 1.5;
-}
-
-.app {
-  padding: 2rem;
-  max-width: 60rem;
-  margin: 0 auto;
+  font-family: theme("fontFamily.sans"), system-ui, -apple-system, sans-serif;
+  background-color: #f4f5f7;
 }
