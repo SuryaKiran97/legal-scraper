@@ -10,7 +10,12 @@ import { startTshcLiveStatusSchedule } from "./queues/scrapeQueue.js";
 const app = express();
 const PORT = process.env.PORT ?? 3001;
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:5173',
+    'https://legal-scraper.vercel.app'
+  ]
+}));
 app.use(express.json());
 
 app.get("/health", (_req, res) => {
