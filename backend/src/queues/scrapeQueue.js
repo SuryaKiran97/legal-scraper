@@ -1,12 +1,11 @@
 import "dotenv/config";
 import { Queue } from "bullmq";
+import IORedis from "ioredis";
 
-const REDIS_URL = process.env.REDIS_URL ?? "redis://localhost:6379";
-const connection = {
-  host: new URL(REDIS_URL).hostname,
-  port: parseInt(new URL(REDIS_URL).port || "6379", 10),
-  password: new URL(REDIS_URL).password || undefined,
-};
+const redisUrl = process.env.REDIS_URL?.trim();
+const connection = redisUrl
+  ? new IORedis(redisUrl, { maxRetriesPerRequest: null })
+  : { host: "localhost", port: 6379 };
 
 export const SCRAPE_QUEUE_NAME = "scrape";
 

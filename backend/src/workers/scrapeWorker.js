@@ -1,5 +1,6 @@
 import "dotenv/config";
 import { Worker } from "bullmq";
+import IORedis from "ioredis";
 import { PrismaClient } from "@prisma/client";
 import { scrapeLiveStatus } from "../scrapers/tshcLiveStatus.js";
 import { scrapeAdvocateCauseList } from "../scrapers/tshcAdvocateWise.js";
@@ -12,12 +13,10 @@ if (!causeListStatusModel) {
   throw new Error("Prisma client missing cause list model. Stop worker, run: npx prisma generate");
 }
 
-const REDIS_URL = process.env.REDIS_URL ?? "redis://localhost:6379";
-const connection = {
-  host: new URL(REDIS_URL).hostname,
-  port: parseInt(new URL(REDIS_URL).port || "6379", 10),
-  password: new URL(REDIS_URL).password || undefined,
-};
+const redisUrl = process.env.REDIS_URL?.trim();
+const connection = redisUrl
+  ? new IORedis(redisUrl, { maxRetriesPerRequest: null })
+  : { host: "localhost", port: 6379 };
 
 const TSHC_COURT_CODE = "TSHC";
 
