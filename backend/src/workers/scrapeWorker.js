@@ -18,6 +18,31 @@ const connection = redisUrl
   ? new IORedis(redisUrl, { maxRetriesPerRequest: null })
   : { host: "localhost", port: 6379 };
 
+// Log which Redis we're using (mask password)
+if (redisUrl) {
+  try {
+    const u = new URL(redisUrl);
+    const hostPort = u.hostname + (u.port ? `:${u.port}` : "");
+    console.log(`[scrapeWorker] Redis: ${u.protocol}//${hostPort} (from REDIS_URL)`);
+  } catch {
+    console.log("[scrapeWorker] Redis: REDIS_URL (from env)");
+  }
+} else {
+  console.log("[scrapeWorker] Redis: localhost:6379 (fallback, no REDIS_URL)");
+}
+
+if (connection && typeof connection.on === "function") {
+  connection.on("error", (err) => {
+    if (err?.code === "ECONNREFUSED") {
+      console.error(
+        "[scrapeWorker] Redis connection refused. Start Redis locally (e.g. docker run -p 6379:6379 redis) or set REDIS_URL to a remote Redis."
+      );
+    } else {
+      console.error("[scrapeWorker] Redis error:", err?.message || err);
+    }
+  });
+}
+
 const TSHC_COURT_CODE = "TSHC";
 
 async function getOrCreateTshcCourt() {
