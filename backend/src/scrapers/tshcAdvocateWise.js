@@ -110,7 +110,10 @@ function parseCaseColumn(text) {
  * @returns {Promise<{ advocateName: string, totalCases: number, causeListDate: string, hearings: Array<object> }>}
  */
 export async function scrapeAdvocateCauseList(advocateName = "D NARENDAR NAIK") {
-  const browser = await chromium.launch({ headless: false });
+  const browser = await chromium.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
 
   try {
     const context = await browser.newContext({ ignoreHTTPSErrors: true });

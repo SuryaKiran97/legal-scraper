@@ -41,7 +41,10 @@ function parseStatusDateFromHeading(headingText) {
  * @returns {Promise<Array<{ slNo: number | null, courtHallNo: string, benchName: string | null, listType: string | null, status: string, uploadedAt: Date | null, pdfUrl: string | null, statusDate: Date }>>}
  */
 export async function scrapeLiveStatus() {
-  const browser = await chromium.launch({ headless: false });
+  const browser = await chromium.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+  });
 
   try {
     const context = await browser.newContext({
